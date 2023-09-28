@@ -31,14 +31,23 @@ def sort_folder(path):
         if file.is_dir():
             print(f"folder: {file.name}")
         else:
-           file_name, ext = os.path.splitext(file.name)
-           file_name = normalize(file_name)
-           dest_folder_name = ""
-           match ext:
-               case ".pdf" | ".txt":
-                   dest_folder_name = "documents/"
+            file_name, ext = os.path.splitext(file.name)
+            file_name = normalize(file_name)
+            dest_folder_name = ""
+            match ext:
+                case ".jpeg" | ".png" | ".jpg" | ".svg":
+                   dest_folder_name = "/images/"
+                case ".avi" | ".mp4" | ".mov" | ".mkv":
+                    dest_folder_name = "/video/"
+                case ".doc" | ".docx" | ".txt" | ".pdf" | ".xlsx" | "pptx":
+                    dest_folder_name = "/documents/"
+                case ".mp3" | ".ogg" | ".wav" | ".amr":
+                    dest_folder_name = "/audio/"
+                case ".zip" | ".gz" | ".tar":
+                    # trzeba usupełnić o rozpakowywanie
+                    dest_folder_name = "/archives/"
 
-           os.renames(f"{path}/{file.name}", f"{path}{dest_folder_name}{file_name}{ext}")
+            os.renames(f"{path}/{file.name}", f"{path}{dest_folder_name}{file_name}{ext}")
 
 def normalize(name: str) -> str:
     # tworzę słownik polskich znaków, które będę zamieniał na odpowiedniki łacińskie
