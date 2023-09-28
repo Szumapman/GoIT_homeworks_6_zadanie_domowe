@@ -44,7 +44,10 @@ def sort_folder(path):
     for file in files:
         if file.is_dir():
             if not file.name in ["images", "video", "documents", "audio", "archives"]:
-                sort_folder(f"{path}/{file.name}")
+                dir_name = normalize(file.name)
+                if dir_name != file.name:
+                    os.renames(f"{path}/{file.name}", f"{path}/{dir_name}")
+                sort_folder(f"{path}/{dir_name}")
         else:
             file_name, ext = os.path.splitext(file.name)
             file_name = normalize(file_name)
@@ -61,21 +64,22 @@ def sort_folder(path):
                 case ".zip" | ".gz" | ".tar":
                     # trzeba usupełnić o rozpakowywanie
                     dest_folder_name = "/archives/"
-            if os.path.exists(f"{path}{dest_folder_name}{file_name}{ext}"):
-                for i in range(1, 1000000):
-                    if not os.path.exists(f"{path}{dest_folder_name}{file_name} ({i}){ext}"):
-                        file_name += f" ({i})"
+
+            if os.path.exists(f"{path}{dest_folder_name}{file_name}{ext}"): # sprawdzam, czy dany plik nie jest już zapisany w dest_folder
+                for i in range(1, 1000000): 
+                    if not os.path.exists(f"{path}{dest_folder_name}{file_name} ({i}){ext}"): # jeśli plik już istnieje w kolejnych wersjach w dest_folder ...
+                        file_name += f" ({i})" # dodaje do jego nazwy " (i)" gdzie i to pierwsza wolna liczba
                         break
             try:
                 os.renames(f"{path}/{file.name}", f"{path}{dest_folder_name}{file_name}{ext}")
             except FileExistsError:
                 print(f"File {file_name}{ext} has not been copied, because too many files with that name already exist in the destination directory.")
                 continue
+
+
 def normalize(name: str) -> str:
     normalized_name = name.translate(polish_chars) # zmieniam polskie znaki na łacińskie odpowiedniki 
-   
-    # zmieniam inne niedozwolone w nazwie znaki na znak _
-    normalized_name = re.sub(r"\W+", "_", normalized_name)
+    normalized_name = re.sub(r"\W+", "_", normalized_name) # zmieniam inne niedozwolone w nazwie znaki na znak _
 
     return normalized_name
     
