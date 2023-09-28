@@ -43,7 +43,10 @@ def sort_folder(path):
     files = os.scandir(path)
     for file in files:
         # sprawdzam czy to katalog, jeśli tak to normalizuję jego nazwę i rekurencyjnie wywołuję funkcję sort_folder 
-        if file.is_dir(): 
+        if file.is_dir():
+            temp_list = list(os.scandir(file.path))
+            if len(temp_list) == 0:
+                os.rmdir(file.path) 
             if not file.name in ["images", "video", "documents", "audio", "archives"]:
                 dir_name = normalize(file.name)
                 dir_path = set_dest_path(f"{path}/", dir_name)
