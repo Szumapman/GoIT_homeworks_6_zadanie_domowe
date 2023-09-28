@@ -44,17 +44,25 @@ def sort_folder(path):
     for file in files:
         # sprawdzam czy to katalog, jeśli tak to normalizuję jego nazwę i rekurencyjnie wywołuję funkcję sort_folder 
         if file.is_dir():
+            #usuwanie pustych katalogów
             temp_list = list(os.scandir(file.path))
             if len(temp_list) == 0:
                 os.rmdir(file.path) 
+
             if not file.name in ["images", "video", "documents", "audio", "archives"]:
                 dir_name = normalize(file.name)
-                dir_path = set_dest_path(f"{path}/", dir_name)
+                dir_path = f"{path}/{dir_name}"
                 try:
                     os.renames(f"{path}/{file.name}", dir_path)
                 except FileExistsError:
-                    print(f"Directory {dir_name} has not been copied, because too many directories with that name already exist.")
-                    continue
+                    # jeśli katalog o takiej nazwie już istniał ustawiam nową nazwę katalogu
+                    dir_path = set_dest_path(f"{path}/", dir_name)
+                    try:
+                        os.renames(f"{path}/{file.name}", dir_path)
+                    except:
+                        print(f"Directory {dir_name} has not been copied, because too many directories with that name already exist.")
+                        continue
+                    
                 sort_folder(dir_path)
         
         # działania na plikach
