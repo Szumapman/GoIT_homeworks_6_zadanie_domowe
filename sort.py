@@ -42,11 +42,20 @@ def get_path():
 def sort_folder(path):
     files = os.scandir(path)
     for file in files:
-        if file.is_dir():
+        # sprawdzam czy to katalog, jeśli tak to normalizuję jego nazwę i rekurencyjnie wywołuję funkcję sort_folder 
+        if file.is_dir(): 
             if not file.name in ["images", "video", "documents", "audio", "archives"]:
                 dir_name = normalize(file.name)
-                if dir_name != file.name:
+                if os.path.exists(f"{path}/{dir_name}"):
+                    for i in range(1, 1000000):
+                        if not os.path.exists(f"{path}/{dir_name} (i)"):
+                            dir_name += f"_{i}"
+                            break
+                try:
                     os.renames(f"{path}/{file.name}", f"{path}/{dir_name}")
+                except FileExistsError:
+                    print(f"Directory {dir_name} has not been copied, because too many directories with that name already exist.")
+                    continue
                 sort_folder(f"{path}/{dir_name}")
         else:
             file_name, ext = os.path.splitext(file.name)
@@ -67,8 +76,8 @@ def sort_folder(path):
 
             if os.path.exists(f"{path}{dest_folder_name}{file_name}{ext}"): # sprawdzam, czy dany plik nie jest już zapisany w dest_folder
                 for i in range(1, 1000000): 
-                    if not os.path.exists(f"{path}{dest_folder_name}{file_name} ({i}){ext}"): # jeśli plik już istnieje w kolejnych wersjach w dest_folder ...
-                        file_name += f" ({i})" # dodaje do jego nazwy " (i)" gdzie i to pierwsza wolna liczba
+                    if not os.path.exists(f"{path}{dest_folder_name}{file_name}_{i}{ext}"): # jeśli plik już istnieje w kolejnych wersjach w dest_folder ...
+                        file_name += f"_{i}" # dodaje do jego nazwy " _i" gdzie i to pierwsza wolna liczba
                         break
             try:
                 os.renames(f"{path}/{file.name}", f"{path}{dest_folder_name}{file_name}{ext}")
@@ -83,6 +92,15 @@ def normalize(name: str) -> str:
 
     return normalized_name
     
+
+# def check_if_exist(path: str, file_name: str, ext="") -> str:
+#     if os.path.exists(f"{path}{file_name}{ext}"): # sprawdzam, czy dany plik / katalog już nie istnieje w dest_folder
+#         for i in range(1, 1000000): 
+#             if not os.path.exists(f"{path}{file_name} ({i}){ext}"): # jeśli plik / katalog już istnieje w kolejnych wersjach w dest_folder ...
+#                 file_name += f" ({i})" # dodaje do jego nazwy " (i)" gdzie i to pierwsza wolna liczba
+#                 break
+#     return f"{path}/{file_name}/{ext}"
+
 
 def main():
     sort_folder(get_path())
