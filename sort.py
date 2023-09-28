@@ -1,6 +1,7 @@
 import sys
 import os
 import shutil
+import re
 
 # files = os.scandir("C:/Projects/GoIT_homeworks/6/Bałagan")
 # for file in files:
@@ -13,6 +14,19 @@ import shutil
 
 # os.makedirs("Bałagan/Test")
 # os.rmdir("C:/Projects/GoIT_homeworks/6/Bałagan/Test")
+
+# słownik polskich znaków, używany w funkcji normalize, zawiera polskie znaki, które będę zamieniał na odpowiedniki łacińskie
+polish_chars = {
+        ord('ą'): 'a', ord('Ą'): 'A',
+        ord('ć'): 'c', ord('Ć'): 'C',
+        ord('ę'): 'e', ord('Ę'): 'E',
+        ord('ł'): 'l', ord('Ł'): 'L',
+        ord('ń'): 'n', ord('Ń'): 'N',
+        ord('ó'): 'o', ord('Ó'): 'O',
+        ord('ś'): 's', ord('Ś'): 'Ś',
+        ord('ź'): 'z', ord('Ż'): 'Z',
+        ord('ż'): 'z', ord('Ż'): 'Z',   
+}
 
 def get_path():
     exit_help = f"Stars program with command like: {sys.argv[0]} /user/folder_to_sort/ (path to folder you want to sort)."
@@ -58,24 +72,11 @@ def sort_folder(path):
                 print(f"File {file_name}{ext} has not been copied, because too many files with that name already exist in the destination directory.")
                 continue
 def normalize(name: str) -> str:
-    # tworzę słownik polskich znaków, które będę zamieniał na odpowiedniki łacińskie
-    map = {
-        ord('ą'): 'a', ord('Ą'): 'A',
-        ord('ć'): 'c', ord('Ć'): 'C',
-        ord('ę'): 'e', ord('Ę'): 'E',
-        ord('ł'): 'l', ord('Ł'): 'L',
-        ord('ń'): 'n', ord('Ń'): 'N',
-        ord('ó'): 'o', ord('Ó'): 'O',
-        ord('ś'): 's', ord('Ś'): 'Ś',
-        ord('ź'): 'z', ord('Ż'): 'Z',
-        ord('ż'): 'z', ord('Ż'): 'Z',   
-    }
-    normalized_name = name.translate(map) # zmieniam polskie znaki na łacińskie odpowiedniki 
-    
+    normalized_name = name.translate(polish_chars) # zmieniam polskie znaki na łacińskie odpowiedniki 
+   
     # zmieniam inne niedozwolone w nazwie znaki na znak _
-    for chr in normalized_name:
-        if not (48 <= ord(chr) <= 57 or 65 <= ord(chr) <= 90 or 97 <= ord(chr) <= 122 or ord(chr) == 95):
-            normalized_name = normalized_name.translate({ord(chr): '_'})
+    normalized_name = re.sub(r"\W+", "_", normalized_name)
+
     return normalized_name
     
 
