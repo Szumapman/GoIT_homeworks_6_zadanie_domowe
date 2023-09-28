@@ -47,9 +47,15 @@ def sort_folder(path):
                 case ".zip" | ".gz" | ".tar":
                     # trzeba usupełnić o rozpakowywanie
                     dest_folder_name = "/archives/"
+            if os.path.exists(f"{path}{dest_folder_name}{file_name}{ext}"):
+                for i in range(1, 1000000):
+                    if not os.path.exists(f"{path}{dest_folder_name}{file_name} ({i}){ext}"):
+                        file_name += f" ({i})"
+                        break
             try:
                 os.renames(f"{path}/{file.name}", f"{path}{dest_folder_name}{file_name}{ext}")
             except FileExistsError:
+                print(f"File {file_name}{ext} has not been copied, because too many files with that name already exist in the destination directory.")
                 continue
 def normalize(name: str) -> str:
     # tworzę słownik polskich znaków, które będę zamieniał na odpowiedniki łacińskie
