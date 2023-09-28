@@ -29,7 +29,8 @@ def sort_folder(path):
     files = os.scandir(path)
     for file in files:
         if file.is_dir():
-            print(f"folder: {file.name}")
+            if not file.name in ["images", "video", "documents", "audio", "archives"]:
+                sort_folder(f"{path}/{file.name}")
         else:
             file_name, ext = os.path.splitext(file.name)
             file_name = normalize(file_name)
@@ -46,9 +47,10 @@ def sort_folder(path):
                 case ".zip" | ".gz" | ".tar":
                     # trzeba usupełnić o rozpakowywanie
                     dest_folder_name = "/archives/"
-
-            os.renames(f"{path}/{file.name}", f"{path}{dest_folder_name}{file_name}{ext}")
-
+            try:
+                os.renames(f"{path}/{file.name}", f"{path}{dest_folder_name}{file_name}{ext}")
+            except FileExistsError:
+                continue
 def normalize(name: str) -> str:
     # tworzę słownik polskich znaków, które będę zamieniał na odpowiedniki łacińskie
     map = {
