@@ -46,17 +46,15 @@ def sort_folder(path):
         if file.is_dir(): 
             if not file.name in ["images", "video", "documents", "audio", "archives"]:
                 dir_name = normalize(file.name)
-                if os.path.exists(f"{path}/{dir_name}"):
-                    for i in range(1, 1000000):
-                        if not os.path.exists(f"{path}/{dir_name} (i)"):
-                            dir_name += f"_{i}"
-                            break
+                dir_path = set_dest_path(f"{path}/", dir_name)
                 try:
-                    os.renames(f"{path}/{file.name}", f"{path}/{dir_name}")
+                    os.renames(f"{path}/{file.name}", dir_path)
                 except FileExistsError:
                     print(f"Directory {dir_name} has not been copied, because too many directories with that name already exist.")
                     continue
-                sort_folder(f"{path}/{dir_name}")
+                sort_folder(dir_path)
+        
+        # działania na plikach
         else:
             file_name, ext = os.path.splitext(file.name)
             file_name = normalize(file_name)
@@ -71,35 +69,31 @@ def sort_folder(path):
                 case ".mp3" | ".ogg" | ".wav" | ".amr":
                     dest_folder_name = "/audio/"
                 case ".zip" | ".gz" | ".tar":
-                    # trzeba usupełnić o rozpakowywanie
                     dest_folder_name = "/archives/"
+                    shutil.unpack_archive(f"{path}/{file.name}", f"{path}{dest_folder_name}{file_name}/") # archiwum jest od razu rozpakowywane do folderu archives/"nazwa archiwum bez rozszerzenia"
 
-            if os.path.exists(f"{path}{dest_folder_name}{file_name}{ext}"): # sprawdzam, czy dany plik nie jest już zapisany w dest_folder
-                for i in range(1, 1000000): 
-                    if not os.path.exists(f"{path}{dest_folder_name}{file_name}_{i}{ext}"): # jeśli plik już istnieje w kolejnych wersjach w dest_folder ...
-                        file_name += f"_{i}" # dodaje do jego nazwy " _i" gdzie i to pierwsza wolna liczba
-                        break
+            dest_path = set_dest_path(f"{path}{dest_folder_name}", file_name, ext)
+
             try:
-                os.renames(f"{path}/{file.name}", f"{path}{dest_folder_name}{file_name}{ext}")
+                os.renames(f"{path}/{file.name}", dest_path)
             except FileExistsError:
                 print(f"File {file_name}{ext} has not been copied, because too many files with that name already exist in the destination directory.")
                 continue
 
 
 def normalize(name: str) -> str:
-    normalized_name = name.translate(polish_chars) # zmieniam polskie znaki na łacińskie odpowiedniki 
+    normalized_name = name.translate(polish_chars) # zmieniam polskie znaki na łacińskie odpowiedniki na podstawie dict: polish_chars
     normalized_name = re.sub(r"\W+", "_", normalized_name) # zmieniam inne niedozwolone w nazwie znaki na znak _
-
     return normalized_name
     
 
-# def check_if_exist(path: str, file_name: str, ext="") -> str:
-#     if os.path.exists(f"{path}{file_name}{ext}"): # sprawdzam, czy dany plik / katalog już nie istnieje w dest_folder
-#         for i in range(1, 1000000): 
-#             if not os.path.exists(f"{path}{file_name} ({i}){ext}"): # jeśli plik / katalog już istnieje w kolejnych wersjach w dest_folder ...
-#                 file_name += f" ({i})" # dodaje do jego nazwy " (i)" gdzie i to pierwsza wolna liczba
-#                 break
-#     return f"{path}/{file_name}/{ext}"
+def set_dest_path(path: str, file_name: str, ext="") -> str:
+    if os.path.exists(f"{path}{file_name}{ext}"): # sprawdzam, czy dany plik / katalog już nie istnieje w dest_folder
+        for i in range(1, 1000000): 
+            if not os.path.exists(f"{path}{file_name}_{i}{ext}"): # jeśli plik / katalog już istnieje w kolejnych wersjach w dest_folder ...
+                file_name += f"_{i}" # dodaje do jego nazwy "_i" gdzie i to pierwsza wolna liczba od 1 do 1000000
+                break
+    return f"{path}{file_name}{ext}"
 
 
 def main():
