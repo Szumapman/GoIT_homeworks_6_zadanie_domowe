@@ -28,6 +28,10 @@ polish_chars = {
         ord('ż'): 'z', ord('Ż'): 'Z',   
 }
 
+extensions = {"images": set(), "documents": set(), "audio": set(), "video": set(), "archives": set(), "unsorted": set()}
+paths = {"images": [], "documents": [], "audio": [], "video": [], "archives": [], "unsorted": []}
+
+
 def get_path():
     exit_help = f"Stars program with command like: {sys.argv[0]} /user/folder_to_sort/ (path to folder you want to sort)."
     if len(sys.argv) < 2:
@@ -36,6 +40,7 @@ def get_path():
         sys.exit(f"Too many command line arguments.\n{exit_help}")
     folder_path = sys.argv[1]
     if os.path.exists(os.path.dirname(folder_path)):
+        # global images_extensions
         return folder_path
     sys.exit(f"{folder_path} is not a proper folder path.\n{exit_help}")
 
@@ -69,28 +74,35 @@ def sort_folder(path):
         else:
             file_name, ext = os.path.splitext(file.name)
             file_name = normalize(file_name)
-            dest_folder_name = ""
+            file_type = ""
             match ext:
                 case ".jpeg" | ".png" | ".jpg" | ".svg":
-                   dest_folder_name = "/images/"
+                   file_type = "images"
                 case ".avi" | ".mp4" | ".mov" | ".mkv":
-                    dest_folder_name = "/video/"
+                    file_type = "/video/"
                 case ".doc" | ".docx" | ".txt" | ".pdf" | ".xlsx" | "pptx":
-                    dest_folder_name = "/documents/"
+                    file_type = "/documents/"
                 case ".mp3" | ".ogg" | ".wav" | ".amr":
-                    dest_folder_name = "/audio/"
+                    file_type = "/audio/"
                 case ".zip" | ".gz" | ".tar":
-                    dest_folder_name = "/archives/"
-                    shutil.unpack_archive(f"{path}/{file.name}", f"{path}{dest_folder_name}{file_name}/") # archiwum jest od razu rozpakowywane do folderu archives/"nazwa archiwum bez rozszerzenia"
+                    file_type = "/archives/"
+                    shutil.unpack_archive(f"{path}/{file.name}", f"{path}/{file_type}/{file_name}/") # archiwum jest od razu rozpakowywane do folderu archives/"nazwa archiwum bez rozszerzenia"
 
-            dest_path = set_dest_path(f"{path}{dest_folder_name}", file_name, ext)
+            dest_path = set_dest_path(f"{path}/{file_type}/", file_name, ext)
 
             try:
                 os.renames(f"{path}/{file.name}", dest_path)
             except FileExistsError:
                 print(f"File {file_name}{ext} has not been copied, because too many files with that name already exist in the destination directory.")
                 continue
-
+            
+            temp_list = paths.get(file_type)
+            temp_list.append(f"{path}/{file_type}/{file.name} has moved to: {dest_path}")
+            paths.update({file_type: temp_list})
+            temp_set = extensions.get(file_type)
+            temp_set.add(ext)
+            extensions.update({file_type: temp_set})
+            
 
 def normalize(name: str) -> str:
     normalized_name = name.translate(polish_chars) # zmieniam polskie znaki na łacińskie odpowiedniki na podstawie dict: polish_chars
@@ -109,6 +121,8 @@ def set_dest_path(path: str, file_name: str, ext="") -> str:
 
 def main():
     sort_folder(get_path())
+    print(extensions)
+    print(paths)
 
 if __name__ == "__main__":
     main()
