@@ -2,18 +2,8 @@ import sys
 import os
 import shutil
 import re
-
-# files = os.scandir("C:/Projects/GoIT_homeworks/6/Bałagan")
-# for file in files:
-#     if file.is_file():
-#         print(file.path)
-# shutil.move("C:/Projects/GoIT_homeworks/6/Bałagan/lis.pdf", "C:/Projects/GoIT_homeworks/6/Bałagan/Nowy/lis.pdf")
-# os.replace("C:/Projects/GoIT_homeworks/6/Bałagan/lis.pdf", "C:/Projects/GoIT_homeworks/6/Bałagan/Nowy/lis.pdf")
-# os.rename("C:/Projects/GoIT_homeworks/6/Bałagan/lis.pdf", "C:/Projects/GoIT_homeworks/6/Bałagan/Nowy/lis.pdf")
-# os.renames("C:/Projects/GoIT_homeworks/6/Bałagan/lis.pdf", "C:/Projects/GoIT_homeworks/6/Bałagan/New/lis.pdf")
-
-# os.makedirs("Bałagan/Test")
-# os.rmdir("C:/Projects/GoIT_homeworks/6/Bałagan/Test")
+import datetime
+import cowsay
 
 # słownik polskich znaków, używany w funkcji normalize, zawiera polskie znaki, które będę zamieniał na odpowiedniki łacińskie
 polish_chars = {
@@ -79,13 +69,13 @@ def sort_folder(path):
                 case ".jpeg" | ".png" | ".jpg" | ".svg":
                    file_type = "images"
                 case ".avi" | ".mp4" | ".mov" | ".mkv":
-                    file_type = "/video/"
+                    file_type = "video"
                 case ".doc" | ".docx" | ".txt" | ".pdf" | ".xlsx" | "pptx":
-                    file_type = "/documents/"
+                    file_type = "documents"
                 case ".mp3" | ".ogg" | ".wav" | ".amr":
-                    file_type = "/audio/"
+                    file_type = "audio"
                 case ".zip" | ".gz" | ".tar":
-                    file_type = "/archives/"
+                    file_type = "archives"
                     shutil.unpack_archive(f"{path}/{file.name}", f"{path}/{file_type}/{file_name}/") # archiwum jest od razu rozpakowywane do folderu archives/"nazwa archiwum bez rozszerzenia"
 
             dest_path = set_dest_path(f"{path}/{file_type}/", file_name, ext)
@@ -96,12 +86,14 @@ def sort_folder(path):
                 print(f"File {file_name}{ext} has not been copied, because too many files with that name already exist in the destination directory.")
                 continue
             
-            temp_list = paths.get(file_type)
-            temp_list.append(f"{path}/{file_type}/{file.name} has moved to: {dest_path}")
-            paths.update({file_type: temp_list})
-            temp_set = extensions.get(file_type)
-            temp_set.add(ext)
-            extensions.update({file_type: temp_set})
+            if paths.get(file_type) != None:
+                temp_list = paths.get(file_type)
+                temp_list.append(f"{path}/{file_type}/{file.name} has moved to: {dest_path}")
+                paths.update({file_type: temp_list})
+            if extensions.get(file_type) != None:
+                temp_set = extensions.get(file_type)
+                temp_set.add(ext)
+                extensions.update({file_type: temp_set})
             
 
 def normalize(name: str) -> str:
@@ -118,14 +110,42 @@ def set_dest_path(path: str, file_name: str, ext="") -> str:
                 break
     return f"{path}{file_name}{ext}"
 
+def create_report(path):
+    now = datetime.datetime.now()
+    with open(path, "a") as fo:
+        fo.write(f"{3*'>'} Activity report - {now.strftime('%Y-%m-%d %H:%M:%S')}:\n")
+        fo.write(f"Extensions of checked files by category:\n")
+        no_transfered_data = True
+        for key, values in extensions.items():
+            if len(values) > 0:
+                no_transfered_data = False
+                values = list(values)
+                fo.write(f"{key}: {', '.join(values[:-1])} and {values[-1]};\n")
+        if no_transfered_data:
+            fo.write(f"{3*'-'}")
+        fo.write(f"\nFiles sorted by category:\n")
+        for key, values in paths.items():
+            print(f"{key} - {values}")
+            if len(values) > 0:
+                no_transfered_data = False
+                fo.write(f"{key}:\n")
+                for value in values:
+                    fo.write(f"{value};\n")
+        if no_transfered_data:
+            fo.write(f"{3*'-'}")
+        fo.write(f"\n{5*'-'} The end {5*'-'}\n\n")
+
+def end_info(path):
+    report_file, _ = sys.argv[0].rsplit("/", maxsplit=1)
+    report_file += f"/report.txt" 
+    cowsay.tux(f"I've sorted your files in {path}.\nReport file is here: {report_file}")    
 
 def main():
-    sort_folder(get_path())
-    print(extensions)
-    print(paths)
+    path = get_path()
+    sort_folder(path)
+    create_report("report.txt")
+    # end_info(path)
+
 
 if __name__ == "__main__":
     main()
-
-
-
