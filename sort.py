@@ -17,7 +17,7 @@ polish_chars = {
         ord('ź'): 'z', ord('Ż'): 'Z',
         ord('ż'): 'z', ord('Ż'): 'Z',   
 }
-
+# pomocnicze słowniki do przechowywania danych o przetwarzanych plikach
 extensions = {"images": set(), "documents": set(), "audio": set(), "video": set(), "archives": set(), "unsorted": set()}
 paths = {"images": [], "documents": [], "audio": [], "video": [], "archives": [], "unsorted": []}
 
@@ -77,18 +77,25 @@ def sort_folder(path):
                 case ".zip" | ".gz" | ".tar":
                     file_type = "archives"
                     shutil.unpack_archive(f"{path}/{file.name}", f"{path}/{file_type}/{file_name}/") # archiwum jest od razu rozpakowywane do folderu archives/"nazwa archiwum bez rozszerzenia"
+                case _:
+                    file_type = "unsorted"
 
-            dest_path = set_dest_path(f"{path}/{file_type}/", file_name, ext)
-
-            try:
-                os.renames(f"{path}/{file.name}", dest_path)
-            except FileExistsError:
-                print(f"File {file_name}{ext} has not been copied, because too many files with that name already exist in the destination directory.")
-                continue
+            # przenoszę pliki (z wyjątkiem tych o nieuwzględnianych rozszerzeniach) do odpowiednich katalogów
+            if file_type != "unsorted":       
+                dest_path = set_dest_path(f"{path}/{file_type}/", file_name, ext)
+                try:
+                    os.renames(f"{path}/{file.name}", dest_path)
+                except FileExistsError:
+                    print(f"File {file_name}{ext} has not been copied, because too many files with that name already exist in the destination directory.")
+                    continue
             
+            # dodaje informacje o ścieżkach obrabianych plików i ich rozszerzeniach do słowników paths i extensions
             if paths.get(file_type) != None:
                 temp_list = paths.get(file_type)
-                temp_list.append(f"{path}/{file_type}/{file.name} has moved to: {dest_path}")
+                if file_type == "unsorted":
+                    temp_list.append(f"{path}/{file_type}/{file.name}")
+                else:
+                    temp_list.append(f"{path}/{file_type}/{file.name} has moved to: {dest_path}")
                 paths.update({file_type: temp_list})
             if extensions.get(file_type) != None:
                 temp_set = extensions.get(file_type)
@@ -120,12 +127,11 @@ def create_report(path):
             if len(values) > 0:
                 no_transfered_data = False
                 values = list(values)
-                fo.write(f"{key}: {', '.join(values[:-1])} and {values[-1]};\n")
+                fo.write(f"{key}: {' | '.join(values)};\n")
         if no_transfered_data:
             fo.write(f"{3*'-'}")
         fo.write(f"\nFiles sorted by category:\n")
         for key, values in paths.items():
-            print(f"{key} - {values}")
             if len(values) > 0:
                 no_transfered_data = False
                 fo.write(f"{key}:\n")
