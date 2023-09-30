@@ -7,23 +7,7 @@ import datetime
 # import cowsay 
 
 
-# pomocnicze słowniki do przechowywania danych o przetwarzanych plikach
-extensions = {
-    "images": set(),
-    "documents": set(),
-    "audio": set(),
-    "video": set(),
-    "archives": set(),
-    "unsorted": set(),
-}
-paths = {
-    "images": [],
-    "documents": [],
-    "audio": [],
-    "video": [],
-    "archives": [],
-    "unsorted": [],
-}
+
 
 
 def get_path():
@@ -38,6 +22,24 @@ def get_path():
     sys.exit(f"{folder_path} is not a proper folder path.\n{exit_help}")
 
 def sort_folder(path):
+    # pomocnicze słowniki do przechowywania danych o przetwarzanych plikach
+    extensions = {
+        "images": set(),
+        "documents": set(),
+        "audio": set(),
+        "video": set(),
+        "archives": set(),
+        "unsorted": set(),
+    }
+    paths = {
+        "images": [],
+        "documents": [],
+        "audio": [],
+        "video": [],
+        "archives": [],
+        "unsorted": [],
+    }
+    # lista plików i katalogów znajdujących się w danym katalogu
     files = list(os.scandir(path))
     for file in files:
         # sprawdzam czy to katalog, jeśli tak to normalizuję jego nazwę i rekurencyjnie wywołuję funkcję sort_folder
@@ -117,6 +119,9 @@ def sort_folder(path):
                 temp_set = extensions.get(file_type)
                 temp_set.add(ext)
                 extensions.update({file_type: temp_set})
+            
+    # dodaje informacje do raportu
+    create_report(extensions, paths, path)
 
             
 
@@ -158,29 +163,37 @@ def set_dest_path(path: str, file_name: str, ext="") -> str:
                 break
     return f"{path}{file_name}{ext}"
 
-def create_report(path):
-    now = datetime.datetime.now()
-    with open(path, "a") as fo:
-        fo.write(f"{3*'>'} Activity report - {now.strftime('%Y-%m-%d %H:%M:%S')}:\n")
-        fo.write(f"Extensions of checked files by category:\n")
-        no_transfered_data = True
-        for key, values in extensions.items():
-            if len(values) > 0:
-                no_transfered_data = False
-                values = list(values)
-                fo.write(f"{key}: {' | '.join(values)};\n")
-        if no_transfered_data:
-            fo.write(f"{3*'-'}")
-        fo.write(f"\nFiles sorted by category:\n")
-        for key, values in paths.items():
-            if len(values) > 0:
-                no_transfered_data = False
-                fo.write(f"{key}:\n")
-                for value in values:
-                    fo.write(f"{value};\n")
-        if no_transfered_data:
-            fo.write(f"{3*'-'}")
-        fo.write(f"\n{5*'-'} The end {5*'-'}\n\n")
+def create_report(extensions: dict, paths: dict, path: str):
+    # sprawdzam, czy w danym katalogu będą informacje do zapisania w raporcie
+    contain_data_to_report = False
+    for value in extensions.values():
+        if len(value) > 1:
+            contain_data_to_report = True
+    # jeśli są dane do zapisu zapisuję je
+    if contain_data_to_report:      
+        report_file = "report.txt"  # nazwa pliku z raportem (domyślnie raport jest zapisywany w folderze programu)
+        now = datetime.datetime.now()
+        with open(report_file, "a") as fo:
+            fo.write(f"{3*'>'} Activity report for directory: {path} - {now.strftime('%Y-%m-%d %H:%M:%S')}:\n")
+            fo.write(f"Extensions of checked files by category:\n")
+            no_transfered_data = True
+            for key, values in extensions.items():
+                if len(values) > 0:
+                    no_transfered_data = False
+                    values = list(values)
+                    fo.write(f"{key}: {' | '.join(values)};\n")
+            if no_transfered_data:
+                fo.write(f"{3*'-'}")
+            fo.write(f"\nFiles sorted by category:\n")
+            for key, values in paths.items():
+                if len(values) > 0:
+                    no_transfered_data = False
+                    fo.write(f"{key}:\n")
+                    for value in values:
+                        fo.write(f"{value};\n")
+            if no_transfered_data:
+                fo.write(f"{3*'-'}")
+            fo.write(f"\n{20*'-'}\n\n")
 
 # # dodatkowe informacje wyświetlane w konsoli na zakończenie programu - wymaga import cowsay
 # def end_info(path):
@@ -192,7 +205,7 @@ def create_report(path):
 def main():
     path = get_path()
     sort_folder(path)
-    create_report("report.txt")
+    # create_report("report.txt")
     # end_info(path)
 
 
