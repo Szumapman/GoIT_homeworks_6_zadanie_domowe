@@ -7,7 +7,8 @@ import datetime
 # import cowsay 
 
 
-
+# nazwa pliku z raportem (domyślnie raport jest zapisywany w folderze programu)
+report_file = "report.txt"  
 
 
 def get_path():
@@ -171,7 +172,6 @@ def create_report(extensions: dict, paths: dict, path: str):
             contain_data_to_report = True
     # jeśli są dane do zapisu zapisuję je
     if contain_data_to_report:      
-        report_file = "report.txt"  # nazwa pliku z raportem (domyślnie raport jest zapisywany w folderze programu)
         now = datetime.datetime.now()
         with open(report_file, "a") as fo:
             fo.write(f"{3*'>'} Activity report for directory: {path} - {now.strftime('%Y-%m-%d %H:%M:%S')}:\n")
@@ -196,17 +196,16 @@ def create_report(extensions: dict, paths: dict, path: str):
             fo.write(f"\n{20*'-'}\n\n")
 
 # # dodatkowe informacje wyświetlane w konsoli na zakończenie programu - wymaga import cowsay
-# def end_info(path):
-#     report_file, _ = sys.argv[0].rsplit("/", maxsplit=1)
-#     report_file += f"/report.txt"
-#     cowsay.tux(f"I've sorted your files in {path}.\nReport file is here: {report_file}")
+def end_info(path: str) -> str:
+    report_file_path, _ = sys.argv[0].rsplit("/", maxsplit=1)
+    return f"{report_file_path}/{report_file}"
 
 
 def main():
     path = get_path()
     sort_folder(path)
-    # create_report("report.txt")
-    # end_info(path)
+    # cowsay.tux(f"I've sorted your files in {path}.\nReport file is here: {end_info(path)}")
+    print(f"I've sorted your files in {path}.\nReport file is here: {end_info(path)}")
 
 
 if __name__ == "__main__":
