@@ -3,30 +3,10 @@ import os
 import shutil
 import re
 import datetime
+# dodatkowa bilioteka wymagająca instalacji (pip install cowsay) używana do wyświetlenia końcowych informacji 
+# import cowsay 
 
-# import cowsay # dodatkowa bilioteka wymagająca instalacji (pip install cowsay) używana do wyświetlenia końcowych informacji
 
-# pomocniczy słownik polskich znaków, używany w funkcji normalize, zawiera polskie znaki, które będą zamieniane na odpowiedniki łacińskie
-polish_chars = {
-    ord("ą"): "a",
-    ord("Ą"): "A",
-    ord("ć"): "c",
-    ord("Ć"): "C",
-    ord("ę"): "e",
-    ord("Ę"): "E",
-    ord("ł"): "l",
-    ord("Ł"): "L",
-    ord("ń"): "n",
-    ord("Ń"): "N",
-    ord("ó"): "o",
-    ord("Ó"): "O",
-    ord("ś"): "s",
-    ord("Ś"): "Ś",
-    ord("ź"): "z",
-    ord("Ż"): "Z",
-    ord("ż"): "z",
-    ord("Ż"): "Z",
-}
 # pomocnicze słowniki do przechowywania danych o przetwarzanych plikach
 extensions = {
     "images": set(),
@@ -58,7 +38,7 @@ def get_path():
     sys.exit(f"{folder_path} is not a proper folder path.\n{exit_help}")
 
 def sort_folder(path):
-    files = os.scandir(path)
+    files = list(os.scandir(path))
     for file in files:
         # sprawdzam czy to katalog, jeśli tak to normalizuję jego nazwę i rekurencyjnie wywołuję funkcję sort_folder
         if file.is_dir():
@@ -66,23 +46,27 @@ def sort_folder(path):
             temp_list = list(os.scandir(file.path))
             if len(temp_list) == 0:
                 os.rmdir(file.path)
-
+            # pominięcie katalogów która są wykluczone z sortowania
             if not file.name in ["images", "video", "documents", "audio", "archives"]:
                 dir_name = normalize(file.name)
                 dir_path = f"{path}/{dir_name}"
-                try:
-                    os.renames(f"{path}/{file.name}", dir_path)
-                except FileExistsError:
-                    # jeśli katalog o takiej nazwie już istniał ustawiam nową nazwę katalogu
-                    dir_path = set_dest_path(f"{path}/", dir_name)
+                # sprawdzam, czy nastąpiła zmiana nazwy katalogu po uzyciu funkcji normalize i jeśli tak przenoszę zawartość do katalogu z nową nazwą
+                if dir_name != file.name:
+                    #sprawdzam czy w katalogu nie istnieje już katalog który kolidowałby z nową nazwą, jeśli tak dodaje numerowaną wersję
+                    for entry in files:
+                        if dir_name == entry.name:
+                            dir_path = set_dest_path(f"{path}/", dir_name)
+                
+                    # przenoszę zawartość katalogu ze zmienioną nazwą
                     try:
                         os.renames(f"{path}/{file.name}", dir_path)
-                    except:
+                    except FileExistsError:
                         print(
                             f"Directory {dir_name} has not been copied, because too many directories with that name already exist."
                         )
                         continue
 
+                # rekurencyjne wywołanie funkcji dla niepustych katalogów        
                 sort_folder(dir_path)
 
         # działania na plikach
@@ -137,6 +121,26 @@ def sort_folder(path):
             
 
 def normalize(name: str) -> str:
+    polish_chars = {
+        ord("ą"): "a",
+        ord("Ą"): "A",
+        ord("ć"): "c",
+        ord("Ć"): "C",
+        ord("ę"): "e",
+        ord("Ę"): "E",
+        ord("ł"): "l",
+        ord("Ł"): "L",
+        ord("ń"): "n",
+        ord("Ń"): "N",
+        ord("ó"): "o",
+        ord("Ó"): "O",
+        ord("ś"): "s",
+        ord("Ś"): "Ś",
+        ord("ź"): "z",
+        ord("Ż"): "Z",
+        ord("ż"): "z",
+        ord("Ż"): "Z",
+    }
     # zmieniam polskie znaki na łacińskie odpowiedniki na podstawie dict: polish_chars
     normalized_name = name.translate(polish_chars)
     # zmieniam inne niedozwolone w nazwie znaki na znak _
