@@ -8,17 +8,24 @@ import datetime
 import cowsay # you can comment out this line if you don't want to use cowsay
 
 
-def get_path():
+def get_path() -> str:
+    """
+    The function checks whether the user has entered an additional parameter on the command line in the form of a path to the directory he wants to sort out. 
+    If not, the program terminates, telling the user what the run command should look like with the additional parameter included. 
+    If the path is correct (leads to the directory) it is returned as a string.
+
+    :rtype: str
+    """
     exit_help = f"Stars program with command like: {sys.argv[0]} /user/folder_to_sort/ (path to folder you want to sort)."
     if len(sys.argv) < 2:
         sys.exit(f"Too few command-line arguments.\n{exit_help}")
     elif len(sys.argv) > 2:
         sys.exit(f"Too many command line arguments.\n{exit_help}")
-    folder_path = sys.argv[1]
-    if os.path.exists(os.path.dirname(folder_path)):
+    folder_path = sys.argv[1] 
+    if os.path.exists(os.path.dirname(folder_path)) and not os.path.isfile(folder_path):
         return folder_path
     sys.exit(f"{folder_path} is not a proper folder path.\n{exit_help}")
-
+        
 def sort_folder(path):
     # pomocnicze słowniki do przechowywania danych o przetwarzanych plikach
     extensions = {
