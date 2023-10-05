@@ -28,7 +28,8 @@ def get_path() -> str:
         
 def sort_folder(path: str, report_file_name: str):
     """
-    The function sorts files in the directory given as an argument and recursively its subdirectories (excluding excluded e.g. documents). Empty directories are deleted. 
+    The function sorts files in the directory given as an argument and recursively its subdirectories (excluding excluded e.g. documents). 
+    Empty directories are deleted. 
     File names are normalized (all characters other than letters and numbers and _ ) are replaced with: _ . 
     If a file or directory with the given name already exists, the character _n (where n is the next number) is added to the name. 
     Files with specified extensions are moved to appropriate (created as needed) directories in the directory in which they are located 
