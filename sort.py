@@ -3,12 +3,9 @@ import os
 import shutil
 import re
 import datetime
-# dodatkowa bilioteka wymagająca instalacji (pip install cowsay) używana do wyświetlenia końcowych informacji 
-# import cowsay 
 
-
-# nazwa pliku z raportem (domyślnie raport jest zapisywany w folderze programu)
-report_file = "report.txt"  
+# additional library requiring installation (pip install cowsay) used to display final information 
+import cowsay # you can comment out this line if you don't want to use cowsay
 
 
 def get_path():
@@ -197,6 +194,8 @@ def create_report(extensions: dict, paths: dict, path: str):
 
 # # dodatkowe informacje wyświetlane w konsoli na zakończenie programu - wymaga import cowsay
 def end_info(path: str) -> str:
+    # nazwa pliku z raportem (domyślnie raport jest zapisywany w folderze programu)
+    report_file = "report.txt" 
     report_file_path, _ = sys.argv[0].rsplit("/", maxsplit=1)
     return f"{report_file_path}/{report_file}"
 
@@ -204,8 +203,8 @@ def end_info(path: str) -> str:
 def main():
     path = get_path()
     sort_folder(path)
-    # cowsay.tux(f"I've sorted your files in {path}.\nReport file is here: {end_info(path)}")
-    print(f"I've sorted your files in {path}.\nReport file is here: {end_info(path)}")
+    cowsay.tux(f"I've sorted your files in {path}.\nReport file is here: {end_info(path)}") # you can comment out this line if you don't want to use cowsay
+    # print(f"I've sorted your files in {path}.\nReport file is here: {end_info(path)}") # uncomment this line if not using cowsay
 
 
 if __name__ == "__main__":
