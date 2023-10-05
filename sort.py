@@ -22,7 +22,7 @@ def get_path() -> str:
     elif len(sys.argv) > 2:
         sys.exit(f"Too many command line arguments.\n{exit_help}")
     folder_path = sys.argv[1] 
-    if os.path.exists(os.path.dirname(folder_path)) and not os.path.isfile(folder_path):
+    if os.path.exists(os.path.dirname(folder_path)) and os.path.isdir(folder_path):
         return folder_path
     sys.exit(f"{folder_path} is not a proper folder path.\n{exit_help}")
         
