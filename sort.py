@@ -2,7 +2,7 @@ import sys
 import os
 import shutil
 import re
-import datetime
+from datetime import datetime
 
 # additional library requiring installation (pip install cowsay) used to display final information 
 import cowsay # you can comment out this line if you don't want to use cowsay
@@ -26,8 +26,34 @@ def get_path() -> str:
         return folder_path
     sys.exit(f"{folder_path} is not a proper folder path.\n{exit_help}")
         
-def sort_folder(path):
-    # pomocnicze słowniki do przechowywania danych o przetwarzanych plikach
+def sort_folder(path: str, report_file_name: str):
+    """
+    The function sorts files in the directory given as an argument and recursively its subdirectories (excluding excluded e.g. documents). Empty directories are deleted. 
+    File names are normalized (all characters other than letters and numbers and _ ) are replaced with: _ . 
+    If a file or directory with the given name already exists, the character _n (where n is the next number) is added to the name. 
+    Files with specified extensions are moved to appropriate (created as needed) directories in the directory in which they are located 
+    (e.g., files with .doc extensions are moved to the documents folder, files with .zip extensions are moved to the archives directory, etc.)
+    Files with unknown extensions are not moved, but have a normalized name.
+    Archives, after being moved to the archives directory, are unzipped to the directory with the name of the archive being unzipped 
+    (without the extension).
+    For each directory, the function saves in the report file (whose name is passed as the second argument), the results of its work.
+
+    Directories to which files with given extensions are moved:
+    images -> .jpeg | .png | .jpg | .svg
+    video -> .avi | .mp4 | .mov | .mkv 
+    documents -> .doc | .docx | .txt | .pdf | .xlsx | .pptx
+    audio -> .mp3 | .ogg | .wav | .amr
+    archives -> .zip | .gz | .tar
+
+    :param path: string with path to directory to be sorted
+    :type path: str
+    :param report_file_name: name of report file
+    :type report_file_name: str
+    :raise FileNotFoundError: if source path lead to non-existing directory
+    :raise NotADirectoryError: if source path lead to file
+    :raise FileExistsError: if too many files versions (over 1 000 000) exists in folder 
+    """
+    # auxiliary dictionaries to store data on processed files
     extensions = {
         "images": set(),
         "documents": set(),
@@ -44,27 +70,27 @@ def sort_folder(path):
         "archives": [],
         "unsorted": [],
     }
-    # lista plików i katalogów znajdujących się w danym katalogu
+    # list of files and directories located in a given directory
     files = list(os.scandir(path))
     for file in files:
-        # sprawdzam czy to katalog, jeśli tak to normalizuję jego nazwę i rekurencyjnie wywołuję funkcję sort_folder
+        # I check if it's a directory, if so I normalize its name and recursively call the sort_folde function
         if file.is_dir():
-            # usuwanie pustych katalogów
+            # removal of empty directoriesw
             temp_list = list(os.scandir(file.path))
             if len(temp_list) == 0:
                 os.rmdir(file.path)
-            # pominięcie katalogów która są wykluczone z sortowania
+            # skip directories which are excluded from sorting
             if not file.name in ["images", "video", "documents", "audio", "archives"]:
                 dir_name = normalize(file.name)
                 dir_path = f"{path}/{dir_name}"
-                # sprawdzam, czy nastąpiła zmiana nazwy katalogu po uzyciu funkcji normalize i jeśli tak przenoszę zawartość do katalogu z nową nazwą
+                # I check if there was a change in the directory name after using the normalize function, and if so I move the contents to the directory with the new name
                 if dir_name != file.name:
-                    #sprawdzam czy w katalogu nie istnieje już katalog który kolidowałby z nową nazwą, jeśli tak dodaje numerowaną wersję
+                    # I check if a directory does not already exist that would conflict with the new name, if so I add a numbered version
                     for entry in files:
                         if dir_name == entry.name:
                             dir_path = set_dest_path(f"{path}/", dir_name)
                 
-                    # przenoszę zawartość katalogu ze zmienioną nazwą
+                    # I move the contents of the renamed directory
                     try:
                         os.renames(f"{path}/{file.name}", dir_path)
                     except FileExistsError:
@@ -72,11 +98,11 @@ def sort_folder(path):
                             f"Directory {dir_name} has not been copied, because too many directories with that name already exist."
                         )
                         continue
+                
+                # recursive function call for non-empty directories       
+                sort_folder(dir_path, report_file_name)
 
-                # rekurencyjne wywołanie funkcji dla niepustych katalogów        
-                sort_folder(dir_path)
-
-        # działania na plikach
+        # file operations
         else:
             file_name, ext = os.path.splitext(file.name)
             file_name = normalize(file_name)
@@ -86,20 +112,20 @@ def sort_folder(path):
                     file_type = "images"
                 case ".avi" | ".mp4" | ".mov" | ".mkv":
                     file_type = "video"
-                case ".doc" | ".docx" | ".txt" | ".pdf" | ".xlsx" | "pptx":
+                case ".doc" | ".docx" | ".txt" | ".pdf" | ".xlsx" | ".pptx":
                     file_type = "documents"
                 case ".mp3" | ".ogg" | ".wav" | ".amr":
                     file_type = "audio"
                 case ".zip" | ".gz" | ".tar":
                     file_type = "archives"
-                    # archiwum jest od razu rozpakowywane do folderu archives/"nazwa archiwum bez rozszerzenia"
+                    # archive is immediately extracted to the folder: archives/"archive name without extension"
                     shutil.unpack_archive(
                         f"{path}/{file.name}", f"{path}/{file_type}/{file_name}/"
                     )
                 case _:
                     file_type = "unsorted"
 
-            # przenoszę pliki (z wyjątkiem tych o nieuwzględnianych rozszerzeniach) do odpowiednich katalogów
+            # I move files (except those with unaccounted-for extensions) to the appropriate directories
             if file_type != "unsorted":
                 dest_path = set_dest_path(f"{path}/{file_type}/", file_name, ext)
                 try:
@@ -110,7 +136,7 @@ def sort_folder(path):
                     )
                     continue
 
-            # dodaje informacje o ścieżkach obrabianych plików i ich rozszerzeniach do słowników paths i extensions
+            # adds information about the paths of processed files and their extensions to dicts paths and extensions
             if paths.get(file_type) != None:
                 temp_list = paths.get(file_type)
                 if file_type == "unsorted":
@@ -124,13 +150,20 @@ def sort_folder(path):
                 temp_set = extensions.get(file_type)
                 temp_set.add(ext)
                 extensions.update({file_type: temp_set})
-            
-    # dodaje informacje do raportu
-    create_report(extensions, paths, path)
-
-            
+    
+    create_report(extensions, paths, path, report_file_name)
+           
 
 def normalize(name: str) -> str:
+    """
+    The function normalizes the passed string so that Polish characters are converted to Latin characters, 
+    and characters other than Latin letters, digits and _ , are converted to _ .
+
+    :param name: The variable with string to normalize
+    :type name: str
+    :rtype: str
+    """
+    # Auxiliary dict for the translate() function
     polish_chars = {
         ord("ą"): "a",
         ord("Ą"): "A",
@@ -151,33 +184,56 @@ def normalize(name: str) -> str:
         ord("ż"): "z",
         ord("Ż"): "Z",
     }
-    # zmieniam polskie znaki na łacińskie odpowiedniki na podstawie dict: polish_chars
+    # I change Polish characters to Latin equivalents on the basis of dict: polish_chars
     normalized_name = name.translate(polish_chars)
-    # zmieniam inne niedozwolone w nazwie znaki na znak _
+    # I change other disallowed characters in the name to the _ character
     normalized_name = re.sub(r"\W+", "_", normalized_name)
     return normalized_name
     
 
 def set_dest_path(path: str, file_name: str, ext="") -> str:
-    # sprawdzam, czy dany plik / katalog już nie istnieje w dest_folder
+    """
+    A helper function for creating file and directory names.
+
+    :param path: Path to directory
+    :type path: str
+    :param file_name: Destination directory/file (without extension) name
+    :type file_name: str
+    :param ext: The extension for file or empty for directory 
+    :type ext: str
+    :rtype: str
+    """
+    # I check if the given file / directory does not already exist in dest_folder
     if os.path.exists(f"{path}{file_name}{ext}"):
-        # jeśli plik / katalog już istnieje w kolejnych wersjach w dest_folder dodaje do jego nazwy "_i" gdzie i to pierwsza wolna liczba od 1 do 1000000
+        # if the file / directory already exists in subsequent versions in dest_folder adds to its name "_n" where i is the first free number from 1 to 1000000
         for i in range(1, 1000000):
             if not os.path.exists(f"{path}{file_name}_{i}{ext}"):
                 file_name += f"_{i}"
                 break
     return f"{path}{file_name}{ext}"
 
-def create_report(extensions: dict, paths: dict, path: str):
-    # sprawdzam, czy w danym katalogu będą informacje do zapisania w raporcie
+def create_report(extensions: dict, paths: dict, path: str, report_file_name: str):
+    """
+    The function saves a report with the extensions and files used.
+
+    :param extensions: dict where keys are file categories and values are set with extensions used
+    :type extensions: dict
+    :param paths: dictionary where the keys are file categories and the values are a list of file paths on which sorting was performed
+    :type paths: dict
+    :param path: path to the directory on which sorting is performed
+    :type path: str
+    :param report_file_name: the name of the file to which the report is saved
+    :type report_file_name: str
+    """
+    # I check to see if there will be information in the given directory to write in the report
     contain_data_to_report = False
     for value in extensions.values():
         if len(value) > 1:
             contain_data_to_report = True
-    # jeśli są dane do zapisu zapisuję je
+    # if there is data to record I save it
     if contain_data_to_report:      
-        now = datetime.datetime.now()
-        with open(report_file, "a") as fo:
+        now = datetime.now()
+        with open(report_file_name, "a") as fo:
             fo.write(f"{3*'>'} Activity report for directory: {path} - {now.strftime('%Y-%m-%d %H:%M:%S')}:\n")
             fo.write(f"Extensions of checked files by category:\n")
             no_transfered_data = True
@@ -199,19 +255,26 @@ def create_report(extensions: dict, paths: dict, path: str):
                 fo.write(f"{3*'-'}")
             fo.write(f"\n{20*'-'}\n\n")
 
-# # dodatkowe informacje wyświetlane w konsoli na zakończenie programu - wymaga import cowsay
-def end_info(path: str) -> str:
-    # nazwa pliku z raportem (domyślnie raport jest zapisywany w folderze programu)
-    report_file = "report.txt" 
+def end_info(report_file_name: str) -> str:
+    """
+    Function returns the full path to the report file
+
+    :param report_file_name: the name of the file to which the report is saved
+    :type str
+    :rtype: str
+    """ 
     report_file_path, _ = sys.argv[0].rsplit("/", maxsplit=1)
-    return f"{report_file_path}/{report_file}"
+    return f"{report_file_path}/{report_file_name}"
 
 
 def main():
     path = get_path()
-    sort_folder(path)
-    cowsay.tux(f"I've sorted your files in {path}.\nReport file is here: {end_info(path)}") # you can comment out this line if you don't want to use cowsay
-    # print(f"I've sorted your files in {path}.\nReport file is here: {end_info(path)}") # uncomment this line if not using cowsay
+    # the name of the file to which the report is saved (by default, the report is saved in the program folder)
+    report_file_name = "report.txt"
+    sort_folder(path, report_file_name)
+    # additional information displayed in the console at the end of the program
+    cowsay.tux(f"I've sorted your files in {path}.\nReport file is here: {end_info(report_file_name)}") # you can comment out this line if you don't want to use cowsay
+    # print(f"I've sorted your files in {path}.\nReport file is here: {end_info(report_file_name)}") # uncomment this line if not using cowsay
 
 
 if __name__ == "__main__":
