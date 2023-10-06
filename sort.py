@@ -3,10 +3,13 @@ import os
 import shutil
 import re
 from datetime import datetime
-
 # additional library requiring installation (pip install cowsay) used to display final information 
-import cowsay # you can comment out this line if you don't want to use cowsay
-
+try: 
+    import cowsay # you can comment out this line if you don't want to use cowsay
+except ImportError:
+    IS_COWSAY_AVAILABLE = False
+else:
+    IS_COWSAY_AVAILABLE = True
 
 def get_path() -> str:
     """
@@ -273,9 +276,12 @@ def main():
     # the name of the file to which the report is saved (by default, the report is saved in the program folder)
     report_file_name = "report.txt"
     sort_folder(path, report_file_name)
+    
     # additional information displayed in the console at the end of the program
-    cowsay.tux(f"I've sorted your files in {path}.\nReport file is here: {end_info(report_file_name)}") # you can comment out this line if you don't want to use cowsay
-    # print(f"I've sorted your files in {path}.\nReport file is here: {end_info(report_file_name)}") # uncomment this line if not using cowsay
+    if IS_COWSAY_AVAILABLE:
+        cowsay.tux(f"I've sorted your files in {path}.\nReport file is here: {end_info(report_file_name)}")
+    else:
+        print(f"I've sorted your files in {path}.\nReport file is here: {end_info(report_file_name)}")
 
 
 if __name__ == "__main__":
