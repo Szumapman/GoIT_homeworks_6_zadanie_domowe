@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 # additional library requiring installation (pip install cowsay) used to display final information 
 try: 
-    import cowsay # you can comment out this line if you don't want to use cowsay
+    import cowsay 
 except ImportError:
     IS_COWSAY_AVAILABLE = False
 else:
@@ -259,30 +259,28 @@ def create_report(extensions: dict, paths: dict, path: str, report_file_name: st
                 fo.write(f"{3*'-'}")
             fo.write(f"\n{20*'-'}\n\n")
 
-def end_info(report_file_name: str) -> str:
+def end_info(path, report_file_name: str):
     """
-    Function returns the full path to the report file
+    The function outputs an end message to the terminal.
 
-    :param report_file_name: the name of the file to which the report is saved
+    :param path: path to the directory on which sorting is performed
+    :type path: str 
+    :param report_file_name: the full path to the file to which the report is saved
     :type str
-    :rtype: str
     """ 
-    report_file_path, _ = sys.argv[0].rsplit("/", maxsplit=1)
-    return f"{report_file_path}/{report_file_name}"
+    if IS_COWSAY_AVAILABLE:
+        cowsay.tux(f"I\'ve sorted your files in {path}.\nReport file is here: {report_file_name}")
+    else:
+        print(f"I've sorted your files in {path}.\nReport file is here: {report_file_name}")
 
 
 def main():
     path = get_path()
     # the name of the file to which the report is saved (by default, the report is saved in the program folder)
-    report_file_name = "report.txt"
-    sort_folder(path, report_file_name)
-    
+    report_file_name = f"{os.path.dirname(os.path.abspath(__file__))}/report.txt"
+    sort_folder(path, report_file_name)    
     # additional information displayed in the console at the end of the program
-    if IS_COWSAY_AVAILABLE:
-        cowsay.tux(f"I've sorted your files in {path}.\nReport file is here: {end_info(report_file_name)}")
-    else:
-        print(f"I've sorted your files in {path}.\nReport file is here: {end_info(report_file_name)}")
-
+    end_info(path, report_file_name)
 
 if __name__ == "__main__":
     main()
