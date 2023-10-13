@@ -276,8 +276,8 @@ def end_info(path, report_file_name: str):
 
 def main():
     path = get_path()
-    # the name of the file to which the report is saved (by default, the report is saved in the program folder)
-    report_file_name = f"{os.path.dirname(os.path.abspath(__file__))}/report.txt"
+    # the name of the file to which the report is saved (the report is saved in the main folder of sorted directory)
+    report_file_name = f"{path}/report.txt"
     sort_folder(path, report_file_name)    
     # additional information displayed in the console at the end of the program
     end_info(path, report_file_name)
