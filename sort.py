@@ -2,6 +2,7 @@ import sys
 import os
 import shutil
 import re
+from pathlib import Path
 from datetime import datetime
 # additional library requiring installation (pip install cowsay) used to display final information 
 try: 
@@ -229,16 +230,17 @@ def create_report(extensions: dict, paths: dict, path: str, report_file_name: st
     :param report_file_name: the name of the file to which the report is saved
     :type report_file_name: str
     """
-    # I check to see if there will be information in the given directory to write in the report
-    contain_data_to_report = False
-    for value in extensions.values():
-        if len(value) > 1:
-            contain_data_to_report = True
-    # if there is data to record I save it
-    if contain_data_to_report:      
-        now = datetime.now()
-        with open(report_file_name, "a") as fo:
-            fo.write(f"{3*'>'} Activity report for directory: {path} - {now.strftime('%Y-%m-%d %H:%M:%S')}:\n")
+    now = datetime.now()
+    with open(report_file_name, "a") as fo:
+        fo.write(f"{3*'>'} Activity report for directory: {path} - {now.strftime('%Y-%m-%d %H:%M:%S')}:\n")
+    
+        # I check to see if there will be information in the given directory to write in the report
+        contain_data_to_report = False
+        for value in extensions.values():
+            if len(value) > 0:
+                contain_data_to_report = True
+        # if there is data to record I save it
+        if contain_data_to_report:      
             fo.write(f"Extensions of checked files by category:\n")
             no_transfered_data = True
             for key, values in extensions.items():
@@ -258,6 +260,8 @@ def create_report(extensions: dict, paths: dict, path: str, report_file_name: st
             if no_transfered_data:
                 fo.write(f"{3*'-'}")
             fo.write(f"\n{20*'-'}\n\n")
+        else:
+            fo.write("Nothing to sort.\n")
 
 def end_info(path, report_file_name: str):
     """
@@ -277,7 +281,7 @@ def end_info(path, report_file_name: str):
 def main():
     path = get_path()
     # the name of the file to which the report is saved (the report is saved in the main folder of sorted directory)
-    report_file_name = f"{path}/report.txt"
+    report_file_name = f"{Path.home()}/sort_report.txt"
     sort_folder(path, report_file_name)    
     # additional information displayed in the console at the end of the program
     end_info(path, report_file_name)
