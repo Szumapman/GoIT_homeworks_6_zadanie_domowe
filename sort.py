@@ -87,17 +87,17 @@ def sort_folder(path: str, report_file_name: str):
             # skip directories which are excluded from sorting
             if not file.name in ["images", "video", "documents", "audio", "archives"]:
                 dir_name = normalize(file.name)
-                dir_path = f"{path}/{dir_name}"
+                dir_path = os.path.join(path, dir_name) # Path(path, dir_name)
                 # I check if there was a change in the directory name after using the normalize function, and if so I move the contents to the directory with the new name
                 if dir_name != file.name:
                     # I check if a directory does not already exist that would conflict with the new name, if so I add a numbered version
                     for entry in files:
                         if dir_name == entry.name:
-                            dir_path = set_dest_path(f"{path}/", dir_name)
+                            dir_path = set_dest_path(os.path.join(path, dir_name))
                 
                     # I move the contents of the renamed directory
                     try:
-                        os.renames(f"{path}/{file.name}", dir_path)
+                        os.renames(os.path.join(path, file.name, dir_path))
                     except FileExistsError:
                         print(
                             f"Directory {dir_name} has not been copied, because too many directories with that name already exist."
@@ -125,16 +125,16 @@ def sort_folder(path: str, report_file_name: str):
                     file_type = "archives"
                     # archive is immediately extracted to the folder: archives/"archive name without extension"
                     shutil.unpack_archive(
-                        f"{path}/{file.name}", f"{path}/{file_type}/{file_name}/"
+                        os.path.join(path, file.name), os.path.join(path, file_type, file_name)
                     )
                 case _:
                     file_type = "unsorted"
 
             # I move files (except those with unaccounted-for extensions) to the appropriate directories
             if file_type != "unsorted":
-                dest_path = set_dest_path(f"{path}/{file_type}/", file_name, ext)
+                dest_path = set_dest_path(os.path.join(path, file_type), file_name, ext)
                 try:
-                    os.renames(f"{path}/{file.name}", dest_path)
+                    os.renames(os.path.join(path, file.name), dest_path)
                 except FileExistsError:
                     print(
                         f"File {file_name}{ext} has not been copied, because too many files with that name already exist in the destination directory."
@@ -145,10 +145,10 @@ def sort_folder(path: str, report_file_name: str):
             if paths.get(file_type) != None:
                 temp_list = paths.get(file_type)
                 if file_type == "unsorted":
-                    temp_list.append(f"{path}/{file_type}/{file.name}")
+                    temp_list.append(os.path.join(path, file_type, file.name))
                 else:
                     temp_list.append(
-                        f"{path}/{file_type}/{file.name} has moved to: {dest_path}"
+                       f"{os.path.join(path, file_type, file.name)} has moved to: {dest_path}"
                     )
                 paths.update({file_type: temp_list})
             if extensions.get(file_type) != None:
@@ -209,13 +209,15 @@ def set_dest_path(path: str, file_name: str, ext="") -> str:
     :rtype: str
     """
     # I check if the given file / directory does not already exist in dest_folder
-    if os.path.exists(f"{path}{file_name}{ext}"):
+    full_file_name = f"{file_name}{ext}"
+    if os.path.exists(os.path.join(path, full_file_name)):
         # if the file / directory already exists in subsequent versions in dest_folder adds to its name "_n" where i is the first free number from 1 to 1000000
         for i in range(1, 1000000):
             if not os.path.exists(f"{path}{file_name}_{i}{ext}"):
                 file_name += f"_{i}"
                 break
-    return f"{path}{file_name}{ext}"
+    full_file_name = f"{file_name}{ext}"
+    return os.path.join(path, full_file_name)
 
 def create_report(extensions: dict, paths: dict, path: str, report_file_name: str):
     """
@@ -281,7 +283,7 @@ def end_info(path, report_file_name: str):
 def main():
     path = get_path()
     # the name of the file to which the report is saved (the report is saved in the main folder of sorted directory)
-    report_file_name = f"{Path.home()}/sort_report.txt"
+    report_file_name = os.path.join(Path.home(), "sort_report.txt")
     sort_folder(path, report_file_name)    
     # additional information displayed in the console at the end of the program
     end_info(path, report_file_name)
